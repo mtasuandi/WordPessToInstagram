@@ -1,2 +1,2 @@
 # WordPessToInstagram
-Automatic posting from WordPress posts to Instagram Account.
+Automatic posting of featured images into Instagram account.
