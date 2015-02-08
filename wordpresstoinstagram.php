@@ -4,7 +4,7 @@ Plugin Name: WordPress To Instagram
 Plugin URI: http://kreaxy.com
 Description: Automatic posting of featured images into Instagram account.
 Version: 0.1
-Author: M Teguh A Suandi
+Author: Kreaxy Digital Media
 Author URI: http://kreaxy.com
 License: GNU GPL v2
  */
