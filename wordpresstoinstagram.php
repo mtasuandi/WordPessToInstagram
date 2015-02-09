@@ -23,6 +23,7 @@ class WordPressToInstagram {
 		register_activation_hook( __FILE__, array( $this, 'wordpresstoinstagram_activation' ) );
 		add_action( 'admin_menu', array( $this, 'wordpresstoinstagram_admin_menu' ) );
 		add_action( 'init', array( $this, 'wordpresstoinstagram_init' ) );
+		add_action( 'admin_init', array( $this, 'wordpresstoinstagram_handle_license' ) );
 	}
 
 	public function wordpresstoinstagram_activation() {
@@ -81,7 +82,7 @@ SQL;
 						<br/><em>Enter your valid license email</em>
 					</p>
 					<p>
-						<input type="submit" name="submit" value="Activate License" class="button-primary"/>
+						<input type="submit" name="validate_license" value="Activate License" class="button-primary"/>
 					</p>
 				</form>
 			</div>
@@ -113,5 +114,83 @@ LICENSEPAGE;
 	public function wordpresstoinstagram_init() {
 		require_once( WORDPRESSTOINSTAGRAM_PLUGIN_DIR . 'codes/autoupdate.class.php' );
 		$autoUpdate = new PluginUpdateChecker( WORDPRESSTOINSTAGRAM_PLUGIN_UPDATER_URL, __FILE__, WORDPRESSTOINSTAGRAM_SLUG );
+	}
+
+	public function wordpresstoinstagram_handle_license() {
+		if ( !empty( $_POST['validate_license'] ) && $_POST['validate_license'] == 'Activate License' ) {
+			$licenseEmail = sanitize_text_field( $_POST['kreaxy_license_email'] );
+
+			if ( empty( $licenseEmail ) ) {
+				echo '<div class="error"><p>Please enter license email.</p></div>';
+			}
+			
+			$apiParamsTest = array(
+				'kreaxyLicense' => 'true',
+				'action' => 'testConnection',
+			);
+			$apiTestUrl = add_query_arg( $apiParamsTest, WORDPRESSTOINSTAGRAM_LICENSE_URL );
+			$connectTest = wp_remote_get( $apiTestUrl );
+			if ( is_wp_error( $connectTest ) ) {
+				$connectTest = $this->cCurl( $apiTestUrl );
+			} else {
+				$connectTest = wp_remote_retrieve_body( $connectTest );
+			}
+			
+			if ( $connectTest != 'CONNECTION_OK' ) {
+				echo <<<ERRORMASGAN
+<div class="error"><p>Unable to connect to the licensing server. Please contact <a href="mailto:connect@kreaxy.com">connect@kreaxy.com</a> to get assistance with activating your license.</p></div>
+ERRORMASGAN;
+			} else {
+				if ( !empty( $licenseEmail ) ) {
+					$apiParams = array(
+						'kreaxyLicense' => 'true',
+						'action' => 'activateLicense',
+						'kreaxyLicenseEmail' => urlencode( trim( $licenseEmail ) ),
+						'kreaxyLicensePluginSlug' => urlencode( WORDPRESSTOINSTAGRAM_SLUG )
+					);
+					
+					$urlApi = add_query_arg( $apiParams, WORDPRESSTOINSTAGRAM_LICENSE_URL );
+					$dataLicense = wp_remote_get( $urlApi );
+					if ( is_wp_error( $dataLicense ) ) {
+						$dataLicense = $this->cCurl( $urlApi );
+					} else {
+						$dataLicense = wp_remote_retrieve_body( $dataLicense );
+					}
+
+					if ( !empty( $dataLicense ) ) {
+						$objRequestStatus = json_decode( $dataLicense );
+						if ( $objRequestStatus->code == 'SUCCESS' ) {
+							update_option( '__wordpresstoinstagram_license_status', 'LICENSE_OK:' . date( 'Y-m-d H:i:s' ) );
+							
+							wp_safe_redirect( admin_url() . 'admin.php?page=' . WORDPRESSTOINSTAGRAM_SLUG );
+							exit();
+						} else {
+							echo '<div class="error"><p>ERROR. Response: ' . $objRequestStatus->code . ' Message: ' . $objRequestStatus->message . '</p></div>';
+						}
+					} else {
+						echo '<div class="error"><p>Invalid license!</p></div>';
+					}
+				}
+			}
+		}
+	}
+
+	private function cCurl($url) {
+		$options = array( 
+			CURLOPT_RETURNTRANSFER => true,
+			CURLOPT_HEADER         => false,
+			CURLOPT_FOLLOWLOCATION => true, 
+			CURLOPT_USERAGENT      => 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:34.0) Gecko/20100101 Firefox/34.0',
+			CURLOPT_AUTOREFERER    => true,
+			CURLOPT_TIMEOUT        => 120, 
+			CURLOPT_MAXREDIRS      => 10,
+			CURLOPT_SSL_VERIFYPEER => false 
+	  );
+
+		$ch = curl_init( $url ); 
+	  curl_setopt_array( $ch, $options ); 
+	  $content = curl_exec( $ch );
+	  curl_close( $ch );
+	  return $content;
 	}
 }new WordPressToInstagram();
