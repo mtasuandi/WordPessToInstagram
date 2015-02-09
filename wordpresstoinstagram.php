@@ -9,6 +9,9 @@ Author URI: http://kreaxy.com
 License: GNU GPL v2
  */
 
+/**
+ * Prevent the plugin accessed direclty
+ */
 if ( ! defined( 'ABSPATH' ) ) die( 'Cheating, uh?' );
 
 define( 'WORDPRESSTOINSTAGRAM_VERSION', '0.1' );
@@ -18,7 +21,13 @@ define( 'WORDPRESSTOINSTAGRAM_LICENSE_URL', 'http://opensource.kreaxy.com' );
 define( 'WORDPRESSTOINSTAGRAM_PLUGIN_UPDATER_URL', 'http://kreaxy.com/updater/plugins/wordpresstoinstagram/metadata.json' );
 define( 'WORDPRESSTOINSTAGRAM_LICENSE_STATUS', get_option( '__wordpresstoinstagram_license_status' ) );
 
+/**
+ * Class constructor
+ */
 class WordPressToInstagram {
+	/**
+	 * WordPress Hooks
+	 */
 	public function __construct() {
 		register_activation_hook( __FILE__, array( $this, 'wordpresstoinstagram_activation' ) );
 		add_action( 'admin_menu', array( $this, 'wordpresstoinstagram_admin_menu' ) );
@@ -26,6 +35,9 @@ class WordPressToInstagram {
 		add_action( 'admin_init', array( $this, 'wordpresstoinstagram_handle_license' ) );
 	}
 
+	/**
+	 * Create related table during plugin activation
+	 */
 	public function wordpresstoinstagram_activation() {
 		if ( !function_exists( 'dbDelta' ) ) {
 			require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
@@ -49,6 +61,10 @@ SQL;
 		dbDelta( $sqlInstagrams );
 	}
 	
+	/**
+	 * Check for the license value
+	 * If the license is empty then display the licensing page otherwise display normal page
+	 */
 	public function wordpresstoinstagram_admin_menu() {
 		$licenseStatus = WORDPRESSTOINSTAGRAM_LICENSE_STATUS;
 		
@@ -69,6 +85,9 @@ SQL;
 		}
 	}
 
+	/**
+	 * HTML Form for licensing
+	 */
 	public function wordpresstoinstagram_display_page_license() {
 		echo <<<LICENSEPAGE
 <div class="wrap">
@@ -92,6 +111,9 @@ SQL;
 LICENSEPAGE;
 	}
 
+	/**
+	 * Plugin page
+	 */
 	public function wordpresstoinstagram_display_page() {
 		$tab = sanitize_text_field( $_GET['tab'] );
 		$node = sanitize_text_field( $_GET['node'] );
@@ -111,11 +133,18 @@ LICENSEPAGE;
 		}
 	}
 
+	/**
+	 * Plugin Autoupdater
+	 * The url is pointed to http://opensource.kreaxy.com/
+	 */
 	public function wordpresstoinstagram_init() {
 		require_once( WORDPRESSTOINSTAGRAM_PLUGIN_DIR . 'codes/autoupdate.class.php' );
 		$autoUpdate = new PluginUpdateChecker( WORDPRESSTOINSTAGRAM_PLUGIN_UPDATER_URL, __FILE__, WORDPRESSTOINSTAGRAM_SLUG );
 	}
 
+	/**
+	 * Handle validate license
+	 */
 	public function wordpresstoinstagram_handle_license() {
 		if ( !empty( $_POST['validate_license'] ) && $_POST['validate_license'] == 'Activate License' ) {
 			$licenseEmail = sanitize_text_field( $_POST['kreaxy_license_email'] );
@@ -175,6 +204,9 @@ ERRORMASGAN;
 		}
 	}
 
+	/**
+	 * PHP Curl
+	 */
 	private function cCurl($url) {
 		$options = array( 
 			CURLOPT_RETURNTRANSFER => true,
