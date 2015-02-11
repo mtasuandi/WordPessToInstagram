@@ -33,6 +33,8 @@ class WordPressToInstagram {
 		add_action( 'admin_menu', array( $this, 'wordpresstoinstagram_admin_menu' ) );
 		add_action( 'init', array( $this, 'wordpresstoinstagram_init' ) );
 		add_action( 'admin_init', array( $this, 'wordpresstoinstagram_handle_license' ) );
+		add_action( 'admin_init', array( $this, 'wordpresstoinstagram_handle_account' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'wordpresstoinstagram_admin_enqueue_scripts' ) );
 	}
 
 	/**
@@ -224,5 +226,69 @@ ERRORMASGAN;
 	  $content = curl_exec( $ch );
 	  curl_close( $ch );
 	  return $content;
+	}
+
+	/**
+	 * Handle account
+	 */
+	public function wordpresstoinstagram_handle_account() {
+		global $wpdb;
+		$tableInstagramAccounts = $wpdb->prefix . 'wpinstagram_accounts';
+		
+		if ( isset( $_POST['submit_wordpresstoinstagram_account'] ) ) {
+			if ( isset( $_POST['wordpresstoinstagram_account_form_nonce'] ) && wp_verify_nonce( $_POST['wordpresstoinstagram_account_form_nonce'], 'wordpresstoinstagram_account_form' ) ) {
+				$idAccount = sanitize_text_field( $_POST['wordpresstoinstagram_account_hidden_id'] );
+				$username = sanitize_text_field( $_POST['instagram_username'] );
+				$password = sanitize_text_field( $_POST['instagram_password'] );
+
+				if ( empty( $idAccount ) ) {
+					$wpdb->query( $wpdb->prepare( "INSERT INTO $tableInstagramAccounts SET username = %s, password = %s, created_at = NOW()", $username, $password ) );
+					$idAccount = $wpdb->insert_id;
+				} else {
+					$wpdb->query( $wpdb->prepare( "UPDATE $tableInstagramAccounts SET username = %s, password = %s, updated_at = NOW() WHERE id = %d", $username, $password, $idAccount ) );
+				}
+
+				wp_safe_redirect( admin_url() . 'admin.php?page=' . WORDPRESSTOINSTAGRAM_SLUG . '&tab=accounts&node=account&account=' . $idAccount );
+				exit();
+			}
+		}
+
+		/**
+		 * Remove account
+		 */
+		if ( isset( $_GET['page'] ) && $_GET['page'] == WORDPRESSTOINSTAGRAM_SLUG ) {
+			if ( isset( $_GET['tab'] ) && $_GET['tab'] == 'accounts' ) {
+				if ( isset( $_GET['node'] ) && $_GET['node'] == 'trash' ) {
+					if ( isset( $_GET['wordpresstoinstagram_trash_account_nonce'] ) ) {
+						if ( wp_verify_nonce( $_GET['wordpresstoinstagram_trash_account_nonce'], 'wordpresstoinstagram_trash_account' ) ) {
+							global $wpdb;
+							$tableInstagramAccounts = $wpdb->prefix . 'wpinstagram_accounts';
+							$idAccount = sanitize_text_field( $_GET['account'] );
+
+							$wpdb->query( $wpdb->prepare( "UPDATE $tableInstagramAccounts SET deleted_at = NOW() WHERE id = %d", $idAccount ) );
+							die( 'ACCOUNT_TRASHED' );
+						} else {
+							die( 'INVALID_REQUEST' );
+						}
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * Include Js file to admin page
+	 */
+	public function wordpresstoinstagram_admin_enqueue_scripts() {
+		wp_enqueue_style( WORDPRESSTOINSTAGRAM_SLUG . '-app', plugins_url( 'css/app.css', __FILE__ ), false, 'screen' );
+		wp_enqueue_style( WORDPRESSTOINSTAGRAM_SLUG . '-messenger', plugins_url( 'scripts/messenger/css/messenger.css', __FILE__ ), false, 'screen' );
+		wp_enqueue_style( WORDPRESSTOINSTAGRAM_SLUG . '-messenger-spinner', plugins_url( 'scripts/messenger/css/messenger-spinner.css', __FILE__ ), false, 'screen' );
+		wp_enqueue_style( WORDPRESSTOINSTAGRAM_SLUG . '-messenger-theme', plugins_url( 'scripts/messenger/css/messenger-theme-flat.css', __FILE__ ), false, 'screen' );
+
+		wp_enqueue_script( 'jquery' );
+
+		wp_enqueue_script( WORDPRESSTOINSTAGRAM_SLUG . '-messenger', plugins_url( 'scripts/messenger/js/messenger.min.js', __FILE__ ), 'jquery' );
+		wp_enqueue_script( WORDPRESSTOINSTAGRAM_SLUG . '-messenger-theme', plugins_url( 'scripts/messenger/js/messenger-theme-flat.js', __FILE__ ), 'jquery' );
+		wp_enqueue_script( WORDPRESSTOINSTAGRAM_SLUG . '-app', plugins_url( 'scripts/app.admin.js', __FILE__ ), array(), get_bloginfo( 'version' ), true );
 	}
 }new WordPressToInstagram();
