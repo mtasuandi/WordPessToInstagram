@@ -1,4 +1,5 @@
-# WordPess To Instagram
+# WordPess To Instagram [![Build Status](https://travis-ci.org/mtasuandi/WordPessToInstagram.svg)](https://travis-ci.org/mtasuandi/WordPessToInstagram)
+
 Automatic posting of featured images into Instagram account.
 
 Author: Kreaxy Digital Media
@@ -8,5 +9,3 @@ This plugin will create new instagram post based on the featured image. The plug
 
 
 [![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/mtasuandi/wordpesstoinstagram/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
-
-[![Build Status](https://travis-ci.org/mtasuandi/WordPessToInstagram.svg)](https://travis-ci.org/mtasuandi/WordPessToInstagram)
