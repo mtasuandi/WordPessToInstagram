@@ -119,12 +119,12 @@ LICENSEPAGE;
 		$node = sanitize_text_field( $_GET['node'] );
 
 		switch ( $tab ) {
-			case 'instagrams':
-				if ( $node == 'instagram' ) {
-					require_once( WORDPRESSTOINSTAGRAM_PLUGIN_DIR . 'views/instagram.php' );
+			case 'accounts':
+				if ( $node == 'account' ) {
+					require_once( WORDPRESSTOINSTAGRAM_PLUGIN_DIR . 'views/accounts/account.php' );
 				} else {
-					require_once( WORDPRESSTOINSTAGRAM_PLUGIN_DIR . 'views/tables/instagrams.tables.class.php' );
-					require_once( WORDPRESSTOINSTAGRAM_PLUGIN_DIR . 'views/instagrams.php' );
+					require_once( WORDPRESSTOINSTAGRAM_PLUGIN_DIR . 'codes/tables/accounts.tables.class.php' );
+					require_once( WORDPRESSTOINSTAGRAM_PLUGIN_DIR . 'views/accounts/accounts.php' );
 				}
 				break;
 			default:
@@ -207,8 +207,8 @@ ERRORMASGAN;
 	/**
 	 * PHP Curl
 	 */
-	private function cCurl($url) {
-		$options = array( 
+	private function cCurl( $url ) {
+		$options = array(
 			CURLOPT_RETURNTRANSFER => true,
 			CURLOPT_HEADER         => false,
 			CURLOPT_FOLLOWLOCATION => true, 
