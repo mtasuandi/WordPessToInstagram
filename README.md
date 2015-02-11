@@ -1,6 +1,6 @@
 # WordPess To Instagram
 
-Automatic posting of featured images into multiple Instagram account.
+Automatic posting of featured images into multiple Instagram accounts.
 
 >Author: Kreaxy Digital Media
 
