@@ -82,7 +82,7 @@ SQL;
 				__( 'WP To Instagram', WORDPRESSTOINSTAGRAM_SLUG ),
 				'manage_options',
 				WORDPRESSTOINSTAGRAM_SLUG,
-				array( $this, 'wordpresstoinstagram_display_page' ), 'dashicons-lock'
+				array( $this, 'wordpresstoinstagram_display_page' ), 'dashicons-camera'
 			);
 		}
 	}
@@ -258,6 +258,9 @@ ERRORMASGAN;
 		 */
 		if ( isset( $_GET['page'] ) && $_GET['page'] == WORDPRESSTOINSTAGRAM_SLUG ) {
 			if ( isset( $_GET['tab'] ) && $_GET['tab'] == 'accounts' ) {
+				/**
+				 * Trash
+				 */
 				if ( isset( $_GET['node'] ) && $_GET['node'] == 'trash' ) {
 					if ( isset( $_GET['wordpresstoinstagram_trash_account_nonce'] ) ) {
 						if ( wp_verify_nonce( $_GET['wordpresstoinstagram_trash_account_nonce'], 'wordpresstoinstagram_trash_account' ) ) {
@@ -267,6 +270,42 @@ ERRORMASGAN;
 
 							$wpdb->query( $wpdb->prepare( "UPDATE $tableInstagramAccounts SET deleted_at = NOW() WHERE id = %d", $idAccount ) );
 							die( 'ACCOUNT_TRASHED' );
+						} else {
+							die( 'INVALID_REQUEST' );
+						}
+					}
+				}
+
+				/**
+				 * Activate
+				 */
+				if ( isset( $_GET['node'] ) && $_GET['node'] == 'activate' ) {
+					if ( isset( $_GET['wordpresstoinstagram_activate_account_nonce'] ) ) {
+						if ( wp_verify_nonce( $_GET['wordpresstoinstagram_activate_account_nonce'], 'wordpresstoinstagram_activate_account' ) ) {
+							global $wpdb;
+							$tableInstagramAccounts = $wpdb->prefix . 'wpinstagram_accounts';
+							$idAccount = sanitize_text_field( $_GET['account'] );
+
+							$wpdb->query( $wpdb->prepare( "UPDATE $tableInstagramAccounts SET is_active = %d WHERE id = %d", 1, $idAccount ) );
+							die( 'ACCOUNT_ACTIVATED' );
+						} else {
+							die( 'INVALID_REQUEST' );
+						}
+					}
+				}
+
+				/**
+				 * Deactivate
+				 */
+				if ( isset( $_GET['node'] ) && $_GET['node'] == 'deactivate' ) {
+					if ( isset( $_GET['wordpresstoinstagram_deactivate_account_nonce'] ) ) {
+						if ( wp_verify_nonce( $_GET['wordpresstoinstagram_deactivate_account_nonce'], 'wordpresstoinstagram_deactivate_account' ) ) {
+							global $wpdb;
+							$tableInstagramAccounts = $wpdb->prefix . 'wpinstagram_accounts';
+							$idAccount = sanitize_text_field( $_GET['account'] );
+
+							$wpdb->query( $wpdb->prepare( "UPDATE $tableInstagramAccounts SET is_active = %d WHERE id = %d", 0, $idAccount ) );
+							die( 'ACCOUNT_DEACTIVATED' );
 						} else {
 							die( 'INVALID_REQUEST' );
 						}

@@ -43,6 +43,7 @@ class InstagramAccountsTable extends WP_List_Table {
 				$tableFields[] = array(
 					'id' => $gData->id,
 					'username' => $gData->username,
+					'is_active_int' => $gData->is_active,
 					'is_active' => '<a class="wordpresstoinstagram_status_' . $gData->id . '" title="' . $isActive . '">' . $isActive . '</a>',
 					'created_at' => $this->relative_time( strtotime( $gData->created_at ) ),
 					'updated_at' => $this->relative_time( strtotime( $gData->updated_at ) )
@@ -104,7 +105,31 @@ class InstagramAccountsTable extends WP_List_Table {
 				$item['username']
 			)
 		);
-		return sprintf( '%1$s %2$s', $item['username'], $this->row_actions( $actions ) );
+		
+		if ( $item['is_active_int'] == 1 ) {
+			$actionStatus = array(
+				'deactivate' => sprintf( '<span class="dashicons dashicons-lock"></span><a href="%s" class="%s" data-username="%s" data-id="%d" data-activateurl="%s">Deactivate</a>',
+					wp_nonce_url( admin_url() . 'admin.php?page=' . WORDPRESSTOINSTAGRAM_SLUG . '&tab=accounts&node=deactivate&account=' . $item['id'], 'wordpresstoinstagram_deactivate_account', 'wordpresstoinstagram_deactivate_account_nonce' ),
+					'wordpresstoinstagram_deactivate_account',
+					$item['username'],
+					$item['id'],
+					wp_nonce_url( admin_url() . 'admin.php?page=' . WORDPRESSTOINSTAGRAM_SLUG . '&tab=accounts&node=activate&account=' . $item['id'], 'wordpresstoinstagram_activate_account', 'wordpresstoinstagram_activate_account_nonce' )
+				)
+			);
+		} else {
+			$actionStatus = array(
+				'activate' => sprintf( '<span class="dashicons dashicons-lock"></span><a href="%s" class="%s" data-username="%s" data-id="%d" data-deactivateurl="%s">Activate</a>',
+					wp_nonce_url( admin_url() . 'admin.php?page=' . WORDPRESSTOINSTAGRAM_SLUG . '&tab=accounts&node=activate&account=' . $item['id'], 'wordpresstoinstagram_activate_account', 'wordpresstoinstagram_activate_account_nonce' ),
+					'wordpresstoinstagram_activate_account',
+					$item['username'],
+					$item['id'],
+					wp_nonce_url( admin_url() . 'admin.php?page=' . WORDPRESSTOINSTAGRAM_SLUG . '&tab=accounts&node=deactivate&account=' . $item['id'], 'wordpresstoinstagram_deactivate_account', 'wordpresstoinstagram_deactivate_account_nonce' )
+				)
+			);
+		}
+
+		$mergeActions = array_merge( $actions, $actionStatus );
+		return sprintf( '%1$s %2$s', $item['username'], $this->row_actions( $mergeActions ) );
 	}
 
 	public function get_bulk_actions(){

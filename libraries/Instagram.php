@@ -1,4 +1,4 @@
-<?php 
+<?php
 class Instagram {
 	public function post( $username, $password, $imageUrl, $caption ) {
 		$agent = $this->generateUserAgent();
