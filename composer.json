@@ -1,12 +1,12 @@
 {
-  "name": "mtasuandi/word-pess-to-instagram",
-  "description": "WordPress plugin for posting featured image post to Instagram",
-  "keywords": ["instagram", "wordpress to instagram"],
-  "homepage": "https://github.com/mtasuandi/WordPessToInstagram",
+  "name": "kreaxy/wordpress-to-instagram",
+  "description": "WordPress plugin for posting to Instagram based on the featured image.",
+  "keywords": ["instagram", "wordpress to instagram", "post wordpress post to instagram"],
+  "homepage": "https://github.com/Kreaxy/WordPessToInstagram",
   "license": ["GNU GPL v.2"],
   "authors": [
     {
-      "name": "M Teguh A Suandi",
+      "name": "Kreaxy Digital Media",
       "homepage": "http://kreaxy.com"
   }
   ]
