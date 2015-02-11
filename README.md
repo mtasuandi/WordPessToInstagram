@@ -1,4 +1,4 @@
-# WordPess To Instagram [![Build Status](https://travis-ci.org/mtasuandi/WordPessToInstagram.svg)](https://travis-ci.org/mtasuandi/WordPessToInstagram)
+# WordPess To Instagram
 
 Automatic posting of featured images into Instagram account.
 
