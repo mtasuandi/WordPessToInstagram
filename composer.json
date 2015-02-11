@@ -1,13 +1,13 @@
 {
-"name": "mtasuandi/WordPessToInstagram",
-"description": "WordPress plugin for posting featured image post to Instagram",
-"keywords": ["instagram", "wordpress to instagram"],
-"homepage": "https://github.com/mtasuandi/WordPessToInstagram",
-"license": ["GNU GPL v.2"],
-"authors": [
-{
-"name": "M Teguh A Suandi",
-"homepage": "http://kreaxy.com"
-}
-]
+  "name": "mtasuandi/word-pess-to-instagram",
+  "description": "WordPress plugin for posting featured image post to Instagram",
+  "keywords": ["instagram", "wordpress to instagram"],
+  "homepage": "https://github.com/mtasuandi/WordPessToInstagram",
+  "license": ["GNU GPL v.2"],
+  "authors": [
+    {
+      "name": "M Teguh A Suandi",
+      "homepage": "http://kreaxy.com"
+  }
+  ]
 }
