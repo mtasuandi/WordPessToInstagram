@@ -7,7 +7,7 @@ class Instagram {
 		$downloadImage = $this->downloadImage( $imageUrl, $fileName );
 
 		if ( $downloadImage ) {
-			$filePath = get_template_directory() . '/temp/' . $fileName;
+			$filePath = WORDPRESSTOINSTAGRAM_PLUGIN_DIR . 'temp/' . $fileName;
 			$guid = $this->generateGuid();
 			$device_id = 'android-' . $guid;
 			$data = '{"device_id":"' . $device_id . '","guid":"' . $guid . '","username":"' . $username . '","password":"' . $password . '","Content-Type":"application/x-www-form-urlencoded; charset=UTF-8"}';
@@ -59,7 +59,7 @@ class Instagram {
 								    	if ( $status != 'fail' ) {
 								    		$this->destroyCookieFile();
 								    		$this->destroyInstagramFile( $postData['photo'] );
-									    	return 'Success';
+									    	return 'SUCCESS';
 								    	} else {
 									    	return 'Fail';
 								    	}
@@ -77,8 +77,8 @@ class Instagram {
 	}
 
 	private function destroyCookieFile() {
-		if ( file_exists( get_template_directory() . '/temp/cookie.txt' ) ) {
-			unlink( get_template_directory() . '/temp/cookie.txt' );
+		if ( file_exists( WORDPRESSTOINSTAGRAM_PLUGIN_DIR . 'temp/cookie.txt' ) ) {
+			unlink( WORDPRESSTOINSTAGRAM_PLUGIN_DIR . 'temp/cookie.txt' );
 		}
 	}
 
@@ -98,7 +98,7 @@ class Instagram {
 		curl_close( $ch );
 
 		if ( $rawdata !== false ) {
-			if ( !file_put_contents( get_template_directory() . '/temp/' . $filename, $rawdata ) ) {
+			if ( !file_put_contents( WORDPRESSTOINSTAGRAM_PLUGIN_DIR . 'temp/' . $filename, $rawdata ) ) {
 				return false;
 			}
 		} else {
@@ -154,7 +154,13 @@ class Instagram {
 			curl_setopt( $ch, CURLOPT_POSTFIELDS, $new_post_data );
 		}
 		
-		$cookieFile = get_template_directory() . '/temp/cookie.txt';
+		$cookieFile = WORDPRESSTOINSTAGRAM_PLUGIN_DIR . 'temp/cookie.txt';
+		if ( !file_exists( $cookieFile ) ) {
+			$fp = fopen( $cookieFile, 'w' );
+			fwrite( $fp, '' );
+			fclose( $fp );
+			chmod( $cookieFile, 0777 ); 
+		}
 
 		if ( $cookies ) {
 			curl_setopt( $ch, CURLOPT_COOKIEFILE, $cookieFile );			
@@ -171,7 +177,7 @@ class Instagram {
 
 	private function getPostData( $filename ) {
 		$post_data = array();
-		$path = get_template_directory() . '/temp/';
+		$path = WORDPRESSTOINSTAGRAM_PLUGIN_DIR . 'temp/';
 		$filePath = $path . $filename;
 		if ( file_exists( $filePath ) ) {
 			$convertImageToJpg = $this->convertImage( $filePath, $path . 'converted_' . $filename );

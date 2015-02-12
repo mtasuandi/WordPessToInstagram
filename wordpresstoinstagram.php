@@ -35,6 +35,9 @@ class WordPressToInstagram {
 		add_action( 'admin_init', array( $this, 'wordpresstoinstagram_handle_license' ) );
 		add_action( 'admin_init', array( $this, 'wordpresstoinstagram_handle_account' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'wordpresstoinstagram_admin_enqueue_scripts' ) );
+		add_filter( 'manage_posts_columns', array( $this, 'wordpresstoinstagram_posts_column' ) );
+		add_action( 'manage_posts_custom_column', array( $this, 'wordpresstoinstagram_posts_status' ), 10, 2 );
+		add_action( 'admin_init', array( $this, 'wordpresstoinstagram_handle_posttoinstagram' ) );
 	}
 
 	/**
@@ -47,6 +50,8 @@ class WordPressToInstagram {
 
 		global $wpdb;
 		$tableInstagramAccounts = $wpdb->prefix . 'wpinstagram_accounts';
+		$tableInstagramTracks = $wpdb->prefix . 'wpinstagram_tracks';
+		$tableInstagramLogs = $wpdb->prefix . 'wpinstagram_logs';
 
 		$sqlInstagrams = <<<SQL
 CREATE TABLE {$tableInstagramAccounts} (
@@ -61,6 +66,29 @@ PRIMARY KEY id (id)
 ) DEFAULT CHARACTER SET utf8, DEFAULT COLLATE utf8_general_ci;
 SQL;
 		dbDelta( $sqlInstagrams );
+
+		$sqlInstagramsTracks = <<<SQL
+CREATE TABLE {$tableInstagramTracks} (
+id INT(11) unsigned NOT NULL AUTO_INCREMENT,
+id_post INT(11) NOT NULL,
+total_posted INT(11) NOT NULL DEFAULT 0,
+posted_at TIMESTAMP NOT NULL,
+PRIMARY KEY id (id)
+) DEFAULT CHARACTER SET utf8, DEFAULT COLLATE utf8_general_ci;
+SQL;
+		dbDelta( $sqlInstagramsTracks );
+
+		$sqlInstagramsLogs = <<<SQL
+CREATE TABLE {$tableInstagramLogs} (
+id INT(11) unsigned NOT NULL AUTO_INCREMENT,
+id_account INT(11) NOT NULL,
+id_post INT(11) NOT NULL,
+response_message TEXT NOT NULL,
+logged_at TIMESTAMP NOT NULL,
+PRIMARY KEY id (id)
+) DEFAULT CHARACTER SET utf8, DEFAULT COLLATE utf8_general_ci;
+SQL;
+		dbDelta( $sqlInstagramsLogs );
 	}
 	
 	/**
@@ -130,6 +158,7 @@ LICENSEPAGE;
 				}
 				break;
 			default:
+				require_once( WORDPRESSTOINSTAGRAM_PLUGIN_DIR . 'codes/tables/logs.tables.class.php' );
 				require_once( WORDPRESSTOINSTAGRAM_PLUGIN_DIR . 'views/dashboard.php' );
 				break;
 		}
@@ -212,12 +241,12 @@ ERRORMASGAN;
 	private function cCurl( $url ) {
 		$options = array(
 			CURLOPT_RETURNTRANSFER => true,
-			CURLOPT_HEADER         => false,
+			CURLOPT_HEADER => false,
 			CURLOPT_FOLLOWLOCATION => true, 
-			CURLOPT_USERAGENT      => 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:34.0) Gecko/20100101 Firefox/34.0',
-			CURLOPT_AUTOREFERER    => true,
-			CURLOPT_TIMEOUT        => 120, 
-			CURLOPT_MAXREDIRS      => 10,
+			CURLOPT_USERAGENT => 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:34.0) Gecko/20100101 Firefox/34.0',
+			CURLOPT_AUTOREFERER => true,
+			CURLOPT_TIMEOUT => 120, 
+			CURLOPT_MAXREDIRS => 10,
 			CURLOPT_SSL_VERIFYPEER => false 
 	  );
 
@@ -329,5 +358,95 @@ ERRORMASGAN;
 		wp_enqueue_script( WORDPRESSTOINSTAGRAM_SLUG . '-messenger', plugins_url( 'scripts/messenger/js/messenger.min.js', __FILE__ ), 'jquery' );
 		wp_enqueue_script( WORDPRESSTOINSTAGRAM_SLUG . '-messenger-theme', plugins_url( 'scripts/messenger/js/messenger-theme-flat.js', __FILE__ ), 'jquery' );
 		wp_enqueue_script( WORDPRESSTOINSTAGRAM_SLUG . '-app', plugins_url( 'scripts/app.admin.js', __FILE__ ), array(), get_bloginfo( 'version' ), true );
+	}
+
+	/**
+	 * Custom column in WP Posts Table
+	 */
+	public function wordpresstoinstagram_posts_column( $columns ) {
+		return array_merge( $columns, array( 'wordpresstoinstagram' => __( 'WP To Instagram' ) ) );
+	}
+
+	/**
+	 * Custom column status
+	 */
+	public function wordpresstoinstagram_posts_status( $column, $idPost ) {
+		global $wpdb;
+		$tableInstagramTracks = $wpdb->prefix . 'wpinstagram_tracks';
+		$totalPosted = 0;
+		$track = $wpdb->get_row( $wpdb->prepare( "SELECT total_posted FROM $tableInstagramTracks WHERE id_post = %d", $idPost ) );
+		if ( !empty( $track ) ) {
+			$totalPosted = $track->total_posted;
+		}
+		$format = 'time';
+		if ( $totalPosted > 1 ) {
+			$format = 'times';
+		}
+		$postTitle = get_the_title( $idPost );
+		$postNonceUrl = wp_nonce_url( admin_url() . 'admin.php?page=' . WORDPRESSTOINSTAGRAM_SLUG . '&tab=posttoinstagram&post=' . $idPost, 'wordpresstoinstagram_posttoinstagram', 'wordpresstoinstagram_posttoinstagram_nonce' );
+		if ( $column == 'wordpresstoinstagram' ) {
+			echo <<<HTML
+<a href="{$postNonceUrl}" class="button-primary wordpresstoinstagram_post_to_instagram" title="Publish post {$postTitle} to Instagram" data-title="{$postTitle}"><span class="dashicons dashicons-camera"></span>Publish to Instagram</a>&nbsp;
+<a class="button action wordpresstoinstagram_counts" title="Published {$totalPosted} {$format}" style="margin-top:5px;" disabled="disabled">{$totalPosted}</a>
+HTML;
+		}
+	}
+
+	public function wordpresstoinstagram_handle_posttoinstagram() {
+		if ( isset( $_GET['page'] ) && $_GET['page'] == WORDPRESSTOINSTAGRAM_SLUG ) {
+			if ( isset( $_GET['tab'] ) && $_GET['tab'] == 'posttoinstagram' ) {
+				if ( isset( $_GET['post'] ) && !empty( $_GET['post'] ) ) {
+					if ( isset( $_GET['wordpresstoinstagram_posttoinstagram_nonce'] ) && wp_verify_nonce( $_GET['wordpresstoinstagram_posttoinstagram_nonce'], 'wordpresstoinstagram_posttoinstagram' ) ) {
+						require_once( WORDPRESSTOINSTAGRAM_PLUGIN_DIR . 'libraries/Instagram.php' );
+						$instagram = new Instagram();
+						$idPost = sanitize_text_field( $_GET['post'] );
+						$idFeaturedImage = get_post_thumbnail_id( $idPost );
+						if ( !empty( $idFeaturedImage ) ) {
+							$imageUrl = wp_get_attachment_url( $idFeaturedImage );
+							$postTitle = get_the_title( $idPost );
+							$postPermalink = get_permalink( $idPost );
+							$thePostTags = get_the_tags( $idPost );
+							$postTags = '';
+							if ( $thePostTags ) {
+								foreach ( $thePostTags as $tPostTag ) {
+									$postTags .= '#' . $tPostTag->name . ' ';
+								}
+							}
+							
+							global $wpdb;
+							$tableInstagramAccounts = $wpdb->prefix . 'wpinstagram_accounts';
+							$tableInstagramTracks = $wpdb->prefix . 'wpinstagram_tracks';
+							$tableInstagramLogs = $wpdb->prefix . 'wpinstagram_logs';
+
+							$igContent = $postTitle . ' - ' . $postPermalink . ' - ' . $postTags;
+							$instagrams = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $tableInstagramAccounts WHERE is_active = %d AND deleted_at IS NULL", 1 ) );
+							if ( !empty( $instagrams ) ) {
+								foreach ( $instagrams as $ig ) {
+									$igResponse = $instagram->post( $ig->username, $ig->password, $imageUrl, $igContent );
+									if ( $igResponse == 'SUCCESS' ) {
+										$track = $wpdb->get_row( $wpdb->prepare( "SELECT id_post FROM $tableInstagramTracks WHERE id_post = %d", $idPost ) );
+										if ( empty( $track ) ) {
+											$wpdb->query( $wpdb->prepare( "INSERT INTO $tableInstagramTracks SET id_post = %d, total_posted = %d, posted_at = NOW()", $idPost, 1 ) );
+										} else {
+											$wpdb->query( $wpdb->prepare( "UPDATE $tableInstagramTracks SET total_posted = total_posted + 1, posted_at = NOW() WHERE id_post = %d", $idPost ) );
+										}
+									}
+									if ( is_array( $igResponse ) ) {
+										$igResponse = serialize( $igResponse );
+									}
+
+									$wpdb->query( $wpdb->prepare( "INSERT INTO $tableInstagramLogs SET id_account = %d, id_post = %d, response_message = %s, logged_at = NOW()", $ig->id, $idPost, $igResponse ) );
+								}
+							}
+							die( 'POSTED_TO_INSTAGRAM' );
+						} else {
+							die( 'POST_DOES_NOT_CONTAIN_FEATURED_IMAGE' );
+						}
+					} else {
+						die( 'INVALID_REQUEST' );
+					}
+				}
+			}
+		}
 	}
 }new WordPressToInstagram();
