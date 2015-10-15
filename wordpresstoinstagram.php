@@ -17,9 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) die( 'Cheating, uh?' );
 define( 'WORDPRESSTOINSTAGRAM_VERSION', '0.1' );
 define( 'WORDPRESSTOINSTAGRAM_SLUG', 'wordpresstoinstagram' );
 define( 'WORDPRESSTOINSTAGRAM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
-define( 'WORDPRESSTOINSTAGRAM_LICENSE_URL', 'http://opensource.kreaxy.com' );
 define( 'WORDPRESSTOINSTAGRAM_PLUGIN_UPDATER_URL', 'http://kreaxy.com/updater/plugins/wordpresstoinstagram/metadata.json' );
-define( 'WORDPRESSTOINSTAGRAM_LICENSE_STATUS', get_option( '__wordpresstoinstagram_license_status' ) );
 
 /**
  * Class constructor
@@ -32,7 +30,6 @@ class WordPressToInstagram {
 		register_activation_hook( __FILE__, array( $this, 'wordpresstoinstagram_activation' ) );
 		add_action( 'admin_menu', array( $this, 'wordpresstoinstagram_admin_menu' ) );
 		add_action( 'init', array( $this, 'wordpresstoinstagram_init' ) );
-		add_action( 'admin_init', array( $this, 'wordpresstoinstagram_handle_license' ) );
 		add_action( 'admin_init', array( $this, 'wordpresstoinstagram_handle_account' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'wordpresstoinstagram_admin_enqueue_scripts' ) );
 		add_filter( 'manage_posts_columns', array( $this, 'wordpresstoinstagram_posts_column' ) );
@@ -92,27 +89,15 @@ SQL;
 	}
 	
 	/**
-	 * Check for the license value
-	 * If the license is empty then display the licensing page otherwise display normal page
+	 * Menu
 	 */
 	public function wordpresstoinstagram_admin_menu() {
-		$licenseStatus = WORDPRESSTOINSTAGRAM_LICENSE_STATUS;
-		
-		if ( empty( $licenseStatus ) ) {
-			add_menu_page( __( 'WordPress To Instagram Activation', WORDPRESSTOINSTAGRAM_SLUG . '-activation' ),
-				__( 'WP To Instagram', WORDPRESSTOINSTAGRAM_SLUG . '-activation' ),
-				'manage_options',
-				WORDPRESSTOINSTAGRAM_SLUG . '-activation',
-				array( $this, 'wordpresstoinstagram_display_page_license' ), 'dashicons-lock'
-			);
-		} else {
-			add_menu_page( __( 'WordPress To Instagram', WORDPRESSTOINSTAGRAM_SLUG ),
-				__( 'WP To Instagram', WORDPRESSTOINSTAGRAM_SLUG ),
-				'manage_options',
-				WORDPRESSTOINSTAGRAM_SLUG,
-				array( $this, 'wordpresstoinstagram_display_page' ), 'dashicons-camera'
-			);
-		}
+		add_menu_page( __( 'WordPress To Instagram', WORDPRESSTOINSTAGRAM_SLUG ),
+			__( 'WP To Instagram', WORDPRESSTOINSTAGRAM_SLUG ),
+			'manage_options',
+			WORDPRESSTOINSTAGRAM_SLUG,
+			array( $this, 'wordpresstoinstagram_display_page' ), 'dashicons-camera'
+		);
 	}
 
 	/**
@@ -145,8 +130,15 @@ LICENSEPAGE;
 	 * Plugin page
 	 */
 	public function wordpresstoinstagram_display_page() {
-		$tab = sanitize_text_field( $_GET['tab'] );
-		$node = sanitize_text_field( $_GET['node'] );
+		$tab = '';
+		if ( isset( $_GET['tab'] ) ) {
+			$tab = sanitize_text_field( $_GET['tab'] );
+		}
+
+		$node = '';
+		if ( isset( $_GET['node'] ) ) {
+			$node = sanitize_text_field( $_GET['node'] );
+		}
 
 		switch ( $tab ) {
 			case 'accounts':
@@ -171,68 +163,6 @@ LICENSEPAGE;
 	public function wordpresstoinstagram_init() {
 		require_once( WORDPRESSTOINSTAGRAM_PLUGIN_DIR . 'codes/autoupdate.class.php' );
 		$autoUpdate = new PluginUpdateChecker( WORDPRESSTOINSTAGRAM_PLUGIN_UPDATER_URL, __FILE__, WORDPRESSTOINSTAGRAM_SLUG );
-	}
-
-	/**
-	 * Handle validate license
-	 */
-	public function wordpresstoinstagram_handle_license() {
-		if ( !empty( $_POST['validate_license'] ) && $_POST['validate_license'] == 'Activate License' ) {
-			$licenseEmail = sanitize_text_field( $_POST['kreaxy_license_email'] );
-
-			if ( empty( $licenseEmail ) ) {
-				echo '<div class="error"><p>Please enter license email.</p></div>';
-			}
-			
-			$apiParamsTest = array(
-				'kreaxyLicense' => 'true',
-				'action' => 'testConnection',
-			);
-			$apiTestUrl = add_query_arg( $apiParamsTest, WORDPRESSTOINSTAGRAM_LICENSE_URL );
-			$connectTest = wp_remote_get( $apiTestUrl );
-			if ( is_wp_error( $connectTest ) ) {
-				$connectTest = $this->cCurl( $apiTestUrl );
-			} else {
-				$connectTest = wp_remote_retrieve_body( $connectTest );
-			}
-			
-			if ( $connectTest != 'CONNECTION_OK' ) {
-				echo <<<ERRORMASGAN
-<div class="error"><p>Unable to connect to the licensing server. Please contact <a href="mailto:connect@kreaxy.com">connect@kreaxy.com</a> to get assistance with activating your license.</p></div>
-ERRORMASGAN;
-			} else {
-				if ( !empty( $licenseEmail ) ) {
-					$apiParams = array(
-						'kreaxyLicense' => 'true',
-						'action' => 'activateLicense',
-						'kreaxyLicenseEmail' => urlencode( trim( $licenseEmail ) ),
-						'kreaxyLicensePluginSlug' => urlencode( WORDPRESSTOINSTAGRAM_SLUG )
-					);
-					
-					$urlApi = add_query_arg( $apiParams, WORDPRESSTOINSTAGRAM_LICENSE_URL );
-					$dataLicense = wp_remote_get( $urlApi );
-					if ( is_wp_error( $dataLicense ) ) {
-						$dataLicense = $this->cCurl( $urlApi );
-					} else {
-						$dataLicense = wp_remote_retrieve_body( $dataLicense );
-					}
-
-					if ( !empty( $dataLicense ) ) {
-						$objRequestStatus = json_decode( $dataLicense );
-						if ( $objRequestStatus->code == 'SUCCESS' ) {
-							update_option( '__wordpresstoinstagram_license_status', 'LICENSE_OK:' . date( 'Y-m-d H:i:s' ) );
-							
-							wp_safe_redirect( admin_url() . 'admin.php?page=' . WORDPRESSTOINSTAGRAM_SLUG );
-							exit();
-						} else {
-							echo '<div class="error"><p>ERROR. Response: ' . $objRequestStatus->code . ' Message: ' . $objRequestStatus->message . '</p></div>';
-						}
-					} else {
-						echo '<div class="error"><p>Invalid license!</p></div>';
-					}
-				}
-			}
-		}
 	}
 
 	/**
