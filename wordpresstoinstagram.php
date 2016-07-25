@@ -1,23 +1,23 @@
 <?php
 /*
 Plugin Name: WordPress To Instagram
-Plugin URI: http://kreaxy.com
+Plugin URI: http://mtasuandi.wordpress.com
 Description: Automatic posting of featured images into Instagram account.
 Version: 0.1
-Author: Kreaxy Digital Media
-Author URI: http://kreaxy.com
+Author: Teguh Suandi
+Author URI: http://mtasuandi.wordpress.com
 License: GNU GPL v2
  */
 
 /**
  * Prevent the plugin accessed direclty
  */
-if ( ! defined( 'ABSPATH' ) ) die( 'Cheating, uh?' );
+if(!defined('ABSPATH')) die('Cheating, uh?');
 
-define( 'WORDPRESSTOINSTAGRAM_VERSION', '0.1' );
-define( 'WORDPRESSTOINSTAGRAM_SLUG', 'wordpresstoinstagram' );
-define( 'WORDPRESSTOINSTAGRAM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
-define( 'WORDPRESSTOINSTAGRAM_PLUGIN_UPDATER_URL', 'http://kreaxy.com/updater/plugins/wordpresstoinstagram/metadata.json' );
+define('WORDPRESSTOINSTAGRAM_VERSION', '0.1');
+define('WORDPRESSTOINSTAGRAM_SLUG', 'wordpresstoinstagram');
+define('WORDPRESSTOINSTAGRAM_PLUGIN_DIR', plugin_dir_path(__FILE__));
+define('WORDPRESSTOINSTAGRAM_PLUGIN_UPDATER_URL', '');
 
 /**
  * Class constructor
