@@ -1,1 +1,1 @@
-Kreaxy Digital Media - kreaxy.com
+Teguh Suandi - http://mtasuandi.wordpress.com
